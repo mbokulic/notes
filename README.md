@@ -1,0 +1,1 @@
+These are my notes on programming and data science. I've put them on Github so that I can have a nice UI to scan them, but I would be glad if you find them useful for yourself.
