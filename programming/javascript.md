@@ -1,52 +1,3 @@
-# various tidbits
-
-## global scope is an object named window
-var x = 1;
-window.x // prints 1
-
-## immutable values are not proper objects
-You cannot add a property to an, eg., string.
-
-## equality
-https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness
-
-## property (attribute) access
-You access properties either by naming them directly after a dot as in object.property. Or you put an expression that evaluates to the correct name in square brackets as in object["property"]. The reason why some properties are always accessed throught brackets even if you know their name is because they are not valid names, e.g. numbers as in array[1].
-
-## short notes
-Curly braces for body, similar to R
-
-semicolon ; after every statement seems optional in most cases, but recommended
-
-methods called same as Python `object.method()`, and attributes
-
-x == (null || undefined) iff x equal to one of those two values. Useful since js does conversions when comparison values are not of the same type. If you want to check if x is a real value, compare to that. 
-
-Use || to set a default value: in 'x || y', if x converts to false (eg, is null), the the expression will return y. The && expr will return left if it evaluates to false, otherwise right. This property of not evaluation is what defines **short-circuit evaluation**. Not only JS has this.
-
-**Nested scope** means that vars declared with var inside a function are visible to it and all functions contained within it, but not to higher level functions or the top level. But code blocks defined by {} do not have local scope except if you use the **let** keyword.
-
-**function square(nr) vs var square = function(nr)**. The first is a *function declaration* and this puts the function at the top of its scope. This means you can use the function before you declared it.
-
-## declaring vars
-use *var* to declare new objects (numbers, strings, functions...). If you do not use it, the interpreter will search for those objects in the available scopes (local, global, idk if you can have nesting)
-
-## case syntax
-funny case syntax, it doesn't use the curly braces.
-switch(var) {
-    case 'crap':
-        do stuff;
-        break;
-    default:
-        do stuff;
-}
-
-## accurate timers using system time
-Cannot use `window.setInterval(callback, interval_in_ms)` as this will be slowed down by other processes and thus give inaccurate time. Use system time via `new Date()`.
-
-https://www.sitepoint.com/creating-accurate-timers-in-javascript/
-https://github.com/Falc/Tock.js/tree/master
-
 # OOP in Javascript
 Three main pillars of OOP: encapsulation, polymorphism and inheritance.
 
@@ -471,5 +422,53 @@ console.log(square(hundred)); })();
 
 Why did we wrap the namespace function in a pair of parentheses? This has to do with a quirk in JavaScript’s syntax. If an expression starts with the keyword function, it is a function expression. However, if a statement starts with function, it is a function declaration, which requires a name and, not being an expression, cannot be called by writing parentheses after it. You can think of the extra wrapping parentheses as a trick to force the function to be interpreted as an expression.
 
+# various tidbits
+
+## global scope is an object named window
+var x = 1;
+window.x // prints 1
+
+## immutable values are not proper objects
+You cannot add a property to an, eg., string.
+
+## equality
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness
+
+## property (attribute) access
+You access properties either by naming them directly after a dot as in object.property. Or you put an expression that evaluates to the correct name in square brackets as in object["property"]. The reason why some properties are always accessed throught brackets even if you know their name is because they are not valid names, e.g. numbers as in array[1].
+
+## short notes
+Curly braces for body, similar to R
+
+semicolon ; after every statement seems optional in most cases, but recommended
+
+methods called same as Python `object.method()`, and attributes
+
+x == (null || undefined) iff x equal to one of those two values. Useful since js does conversions when comparison values are not of the same type. If you want to check if x is a real value, compare to that. 
+
+Use || to set a default value: in 'x || y', if x converts to false (eg, is null), the the expression will return y. The && expr will return left if it evaluates to false, otherwise right. This property of not evaluation is what defines **short-circuit evaluation**. Not only JS has this.
+
+**Nested scope** means that vars declared with var inside a function are visible to it and all functions contained within it, but not to higher level functions or the top level. But code blocks defined by {} do not have local scope except if you use the **let** keyword.
+
+**function square(nr) vs var square = function(nr)**. The first is a *function declaration* and this puts the function at the top of its scope. This means you can use the function before you declared it.
+
+## declaring vars
+use *var* to declare new objects (numbers, strings, functions...). If you do not use it, the interpreter will search for those objects in the available scopes (local, global, idk if you can have nesting)
+
+## case syntax
+funny case syntax, it doesn't use the curly braces.
+switch(var) {
+    case 'crap':
+        do stuff;
+        break;
+    default:
+        do stuff;
+}
+
+## accurate timers using system time
+Cannot use `window.setInterval(callback, interval_in_ms)` as this will be slowed down by other processes and thus give inaccurate time. Use system time via `new Date()`.
+
+https://www.sitepoint.com/creating-accurate-timers-in-javascript/
+https://github.com/Falc/Tock.js/tree/master
 
 
