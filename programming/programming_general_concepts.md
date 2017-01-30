@@ -1,5 +1,31 @@
-### input in the command line
-Use the input() or raw_input() functions. The first will take a string or smt that can be converted into it and return that string. The second will turn a literal into a string. I.e., you can write text without surrounding it in quotation marks.
+### greed in regular expressions
+Repetition operators * + ? {} are greedy, which means they match the biggest expression they can. This occurs because of backtracking: a repetition means that the regexp engine stays in the repetition loop (match this, match this, ...) until it arrives at a non-match and the goes back one character (backtracks).
+
+You can turn the operators into non-greedy ones by putting ? behind them. 
+
+### map and reduce
+Map applies a function to all elements and returns those elements. This function needs to take in one parameter: the element which is transformed. 
+
+Reduce combines all elements into one value. Sometimes you give it a special starting value. The function that goes into reduce takes two variables, the total and the next value that are combined at each step. E.g., for summing, the steps would be: 1+2=3, 3+3=6, etc.
+
+### immutable vs mutable values
+An interesting consequence of mutability is in equality evaluations. Since immutable values are always the same, their references will always evaluate to the same value.
+
+With immutable values, two references can evaluate to the same value (or more precisely, the same content), but still be different. E.g.:
+
+```javascript
+object1 = {nr: 1};
+object2 = object1; // object1 == object2 evals to true
+object3 = {nr: 1}; // object3 == object1 evals to false
+```
+
+### functions: side effects vs return values
+Functions can create side effects (eg, print in the console, change global var) or return values. Generally, those that return values are more reusable since they can be combined.
+
+Pure functions do not depend on context and always give the same result with thhe same input. These are easier to test. 
+
+### call stack
+When a function runs, the computer must "remember" where it was called so that it can return to that place. It does this by putting the call context onto the call stack. In certain cases (eg infinite recursion) this stack can become larger than the memory allows and thus lead to a stack overflow error. 
 
 ### program running time
 Running time is calculated as a function of input and takes the form of arithmetic sums. You are executing something each time, from 0 to n. These "somethings" get added up.  You can express the whole thing as a sum that is a function of n. 
@@ -7,12 +33,6 @@ Running time is calculated as a function of input and takes the form of arithmet
 An empirical way of approaching this is to implement a counter inside the inner loop of your code. Then plot the counter in relation to the input n. Log-log plots (see math_notes) are very useful here to make the distiction between polynomial and exponential relationships.
 
 ![Common arithmetic sums](IMG_0103.PNG)
-
-### search
-Many applications use search. Examples:
-* Google Maps searches spatially for your location
-* FPS games NPCs search for you in the 3D world
-* 1D search of a student's file based on student ID
 
 ### breadth-first search
 A search strategy for 2D (and I guess and dimensional) space where you start with a particular location and expand radially outward from it. Think for example of a chessboard and starting at the top left corner. It is implemented by designating some locations as the boundary and placing those locations in a queue. The algorithm works by marking the next location in the queue as visited and marking the unvisited locations surrounding it as the new boundaries.
