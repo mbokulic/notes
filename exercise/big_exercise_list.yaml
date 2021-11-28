@@ -1,0 +1,26 @@
+side plank with hip lift:
+    muscle group: abs
+    muscle subgroup: obliques
+    equipment needed: null
+    equipment possible: [g_weights]
+    overload: possible
+    shoulder safe: yes
+    lower back safe: yes
+
+russian twist:
+    muscle group: abs
+    muscle subgroup: obliques
+    equipment needed: null
+    equipment possible: [g_weights]
+    overload: possible
+    shoulder safe: yes
+    lower back safe: yes
+
+crunch:
+    muscle group: abs
+    muscle subgroup: upper abs
+    equipment needed: [leg anchor]
+    equipment possible: [g_weights]
+    overload: possible
+    shoulder safe: yes
+    lower back safe: no

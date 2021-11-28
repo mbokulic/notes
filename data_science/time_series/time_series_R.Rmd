@@ -1,0 +1,91 @@
+---
+title: "Time Series Notes"
+author: "MB"
+date: "April 28, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r setup, include=FALSE}
+library(fpp2)
+library(tidyverse)
+library(xts)
+```
+
+
+# exploratory analysis
+
+## general
+
+```{r}
+# if ts object has multiple variables, will plot them with facets
+autoplot(uschange, facets=TRUE)
+```
+
+## plots for spotting seasonality
+
+```{r}
+autoplot(writing)
+ggseasonplot(writing)
+ggsubseriesplot(hsales)
+```
+
+## plots for spotting autocorrelation
+Which may be indicative of a trend, cycle or seasonality.
+
+Lag plots are scatterplot, indicating the relationship between results at different lags. The default in `gglagplot` is to use different colors for the different seasons. I'd look at the colored version first, then uncolored. I also don't like the lines.
+
+```{r}
+autoplot(hsales)
+ggAcf(hsales)
+gglagplot(hsales, do.lines=FALSE)
+gglagplot(hsales, do.lines=FALSE, colour=FALSE)
+```
+
+# transformations and adjustments
+
+Get performance per day instead of month totals to equalize the months.
+
+```{r}
+# gives nr of days per period (month or quarter)
+monthdays(milk)
+
+# picks best box-cox lambda value
+BoxCox.lambda(milk)
+```
+
+# residual diagnostics
+
+```{r}
+# plots diagnostics and does Ljung-Box test
+checkresiduals(naive(goog200))
+```
+
+# 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
