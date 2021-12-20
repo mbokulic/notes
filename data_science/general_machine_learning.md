@@ -116,9 +116,7 @@ But with greater N, the training error gets higher since the datapoints are more
 
 # metrics
 
-Metrics are what you judge your model performance on. Optimally, you would use the same metric in training and judging the model. But you cannot do that always. The metric usually needs to be differentiable for you to be able to train the model on it.
-
-## metrics for regression problems
+## regression metrics
 
 **Mean squared error** / **root mean squared error** is the most common one. RMSE is used to set the scale of the metric back to the one from the outcome. If you optimize for MSE you also optimize for RMSE and vice-versa. In gradient-based methods though they will be using a different learning rate. The constant (ie having one prediction for every observation) that minimizes this metric is the mean.
 $$
@@ -148,6 +146,52 @@ $$
 RMSLE = \sqrt {\frac{1}{N} \sum( log(y_i + 1) - log(\hat{y_i} + 1))}
 $$
 
+## classification metrics
+
+With classification problems we have **hard predictions** (predicting a class for each row) and **soft predictions** (predicting a probability).
+
+**Accuracy**, the % of correctly classified (hard) predictions, is usually not very useful since often times one category is much more common. Therefore, you can always predict that category and get high accuracy.
+
+**Log loss** works with soft predictions and harshly penalizes high certainty (high probability) which leads to a wrong answer. Usually predictions are clipped so that a zero probability is replaced by a very small number, and 1 is replaced by a number very close to 1. Best constant for log loss is the proportion of categories in the dataset. Eg, if there is 90% dogs and 10% cats in the dataset, you should always predict 90% chance of a case being a dog. Below is a binary version of log loss, there is also the multiclass version.
+$$
+logloss = - \frac{1}{N} \sum y_i log(\hat{y_i}) + (1-y_i) log(\hat{1 - y_i})
+$$
+**Area under the curve** works by "trying out" all possible thresholds for classification (works only for binary problems) and calculating the % of correctly classified cases. There are as many thresholds as there are rows. (I'm not sure this is the right way to describe it, but I don't like how Kaggle course described this) It is the area of the curve when you plot the results for all those thresholds, namely their false positive (x-axis) and true positive (y-axis) rate. Both of them start at zero (no one is below the threshold) and end with one (everyone is below the threshold). Another way of explaining what AUC does is that it is the % of correctly classified pairs of objects: if you pair each object from one class with all objects from the other, in what % of cases will the model predict a higher % for the right class. The baseline score for AUC is 0.5.
+
+**Cohen's (weighted) Kappa** compares the accuracy of the predictions with a baseline accuracy, similar to what R-squared does for MSE. It is zero if the predictions are the same as the baseline, and 1 if all predictions are correct. The baseline is the prediction of randomly permuted predictions (there is an analytical solution for this, no need to really permute).
+$$
+kappa = 1 = \frac{error}{baselineError}
+$$
+Weighted Kappa assumes some errors are more costly than others. The most common use case is when the classes are rank-ordered, for example: healthy, mild disease, severe disease. Weights can be manual or preset, eg linear or quadratic. An example of quadratic weights is below.
+
+|         | healthy | mild | severe |
+| ------- | ------- | ---- | ------ |
+| healthy | 0       | 1    | 0      |
+| mild    | 1       | 0    | 1      |
+| severe  | 4       | 1    | 0      |
+
+## target vs optimization metric (and other tips)
+
+Metrics are what you judge your model performance on. Optimally, you would use the same metric in training and judging the model. But you cannot do that always. The metric usually needs to be differentiable for you to be able to train the model on it. Therefore, there is often a difference between the **target metric** (what we want to optimize) and the **optimization metric** (the metric the model will use in training).
+
+Some metrics can be optimized directly (MSE, LogLoss) but many cannot.
+
+- MAE: use a similar metric such as Huber loss. Looks like MSE when error is small, otherwise looks like MAE
+- MPSE, MAPE, RMSLE: preprocess the training set and optimize another metric
+  - these are weighted versions of MSE or MAE, so we can use sample weights and optimize for those
+  - if your library doesn't support sample weights, you can manually resample using those same weights, with replacement. Though likely you will have to resample and retrain several times and average the predictions to make them more stable
+  - RMSLE involves transforming the target, fitting a model using MSE, then transforming back
+- accuracy: tune the threshold after optimizing another metric like Hinge loss (looks close enough to accuracy) or logloss
+- AUC: sometimes you can optimize it directly (it uses pairwise losses instead of pointwise as other metrics), but otherwise optimizelogloss
+- Kappa:
+  - (easy) optimize MSE and find the right thresholds
+  - (hard) custom loss for GBM and neural nets
+- any metric: write a custom loss function (depends on the algo)
+- any metric: optimize another metric and use **early stopping**: use metric 2 to train, but stop the training when metric 1 (target metric) starts getting worse 
+
+Calibrate Random Forest predictions for logloss. Calibration means correcting the predictions so that the predicted probabilities fit the true probabilities better (eg, among samples that have a predicted 20% chance of churning should be 20% churners). The probabilities might not be calibrated, even though the ranking is preserved
+
+How to calibrate: Platt Scaling (fit a logistic regression to your predictions), Isotonic scaling (fit isotonic regression), or other stacking (fit XGBoost or neural nets to your predictions)
 
 # validation
 
@@ -267,7 +311,51 @@ Ranking the importance of different components (rough idea)
 3. hyperparameter tuning
 4. picking the right algorithm (most often GBM wins)
 
+# hyperparameter tuning
 
+## hyperparameters per model
+
+I will write "O" for parameters that lead to overfitting if you increase them, and "U" for those that increase underfitting
+
+GBM
+
+- O max depth and number leaves (lightGBM): set around 7 as a starting point, take care with high values since it will increase training time
+- O subsample / bagging fraction: % of samples to use for each tree
+- O colsample / feature fraction (by tree or by level): % of features to use when fitting a tree
+- U min child weight: very important and varies widely, I think this is related to the minimum of examples in the terminal node
+- O eta / learning rate and num rounds: eta is the learning rate (ie, how much weight is given for each tree), and num rounds is how many successive trees we want to build; you can freeze eta to a small number (0.01 - 0.1) then change the number of rounds until you find the right number; roughly, if you multiply the number of rounds by 2x, you want to divide the learning rate by 2
+- seed: the point here is that the seed should not affect the model too much
+
+random forest
+
+- n estimators: since trees are independent in random forest, there is a sweet spot of n estimators that is *sufficient* and adding more does not benefit performance
+- O max depth: can be set to NA, ie infinite depth, depth 7 a good starting point (but higher than for GBM)
+- O max features
+- U min samples leaf: similar to min child weight
+- criterion: how to evaluate the tree leaves, usually gini coefficient or entropy; just pick the one that works better
+- n jobs: number of cores to use
+
+neural nets
+
+- O number of neurons per layer
+- O number of layers: add a lot of complexity, can lead to non-convergence
+- U SGD as the optimizer
+- O modern optimizers (Adam / Adadelta / Adagrad...)
+- O batch size: useful starting point is 32 or 64
+- learning rate: does not impact overfitting, but it will impact whether the network converges at all (too high) or takes too long to converge (too low); if you increase batch size by X, you can increase your learning rate by X
+- U regularization: l1/l2, dropout/dropconnect, static dropconnect
+
+linear models: SVMs, regularized regression, SGD classifier and regressor, Vowpal Wabbit (online / out of core regression learning) has FTRL (follow the regularized leader... no clue what that is)
+
+- U regularization parameter
+
+## practical tips
+
+- select which parameters to tune: find the most important ones for your model since you do not have time to tune all of them. Look at which parameters are usually tuned eg on Kaggle for your model
+- know what each parameter does, or usually it is enough to know if increasing it makes the model underfit or overfit more
+- there are a lot of libraries that you can use for automatic tuning: hyperopt, scikit-optimize, spearmint, gypyopt... Usually you just specify the space of parameters and it runs automatically
+- manual tuning is also common
+- do not spend too much time tuning parameters since feature engineering, getting more data and validation methods are most important. But I suppose having good starting points (takes experience!) is important
 
 
 

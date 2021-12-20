@@ -85,11 +85,69 @@ Random ideas
 
 - fractional part of price (eg, 2.99$ into 0.99) or another value. Eg, this can be useful to distinguish bots from humans sometimes (in a bidding humans will use round numbers, etc).
 
-## categorical feature interactions
+## mean encoding
 
-Useful for non tree-based models
+The basic version of mean encoding involves creating a new feature based on a categorical variable where the values are the mean target values. Eg, say that you have a binary classification task where you predict whether a user converted. Users from US convert in 5% of cases. Therefore, the mean encoding feature for US is equal to 0.05.
 
+Other options include:
 
+- weight of evidence $ln(\frac{good}{bad}) * 100\%$
+- count of positive cases
+- difference: count positive - count negative
+
+**Motivation**: Mean encoding splits the cases by target value really well. Works especially well with tree-based models which have trouble with high cardinality variables. Diagnostics: if it takes you a long time to start overfitting when you increase tree depth, this means that you need a lot of splits to extract information from your data. Try mean encoding in that case.
+
+Main issue is target leakage which leads to overfitting. It is easiest to see in the extreme case: if there is only one example of eg users from Suriname, then the mean encoding for this category will be equal to the target. This happens for categories bigger than N = 1, but less obviously.
+
+Fixing target leakage:
+
+- CV loop regularization: estimate means on the samples outside the fold. In k = 5, for the 1st fold, you use samples from folds 2-5 to estimate the mean encoded categories. Fill NAs with the global mean (for categories that appear only in one fold). There is still target leakage though, especially with leave-one-out
+
+- smoothing: combine category and global mean, inversely proportionate to the size of the category. Parameter $alpha$ controls the amount of regularization, with $alpha = 0$ meaning no regularization. In a way, $alpha$ is the "size of the category that we can trust". You have to use another method alongside this one, for example the CV loop method.
+  $$
+  meanEncoding = \frac{mean(target) * nrows + globalMean * alpha}{nrows * alpha}
+  $$
+
+- adding noise: you degrade the quality of mean encodings. An unstable method, not clear how much noise to add (another hyperparameter you need to tune). Usually used with leave-one-out
+
+- expanding mean: sort the data and when you calculate mean encoding for row i, use only rows until i. This makes the feature of unequal quality (lower rows have worse quality). The way to fix this is to reshuffle, retrain and average the predictions. This introduces the least amount of leakage and does not have hyperparameters to tune. Built in in Catboost. 
+
+- recommended by Kaggle people: CV loop and expanding mean
+
+summary of correct validation
+
+- for tuning stage:
+  - estimate encodings on train
+  - map to train and validation
+  - regularize on train
+  - validate model
+- for testing stage: same, but now train and validation are one set (train set) and test takes the role of the validation from before
+
+Beyond means:
+
+- for regression tasks you can use percentiles (like the median), SD, distribution bins ("how many between 1-10, 11-20...")
+- for multiclass tasks: if you have k classes you will have k mean encoded features
+- many-to-many relations: eg we have data on which apps users use; first we calculate mean-encodings per app, then each user gets these encodings as a vector (eg if you have app 1 and 2 you get those two values), then we take statistics from these vectors (mean, min, max...)
+- time series: can do complex things like take the result from the previous day, or mean spent per category so far per day (check the video for more ideas)
+- binning numeric features: you bin the feature then treat as categorical -> therefore you can mean-encode it. The features that would benefit from this are those that are used in many splits of the tree model (you can also use those split points to pick the bins)
+- interactions: you pick two categorical features and combine them (can be done for more than two features as well). How you select them: if they often appear in two neighboring nodes in a tree (you can pick the most frequent ones). Catboost does some version of this automatically
+
+In general, if there are a lot of categorical variables it is useful to try mean encodings and interactions between those variables.
+
+## feature interactions
+
+For categorical features, create new categories by concatenating old ones. Or alternatively, one-hot encode old and multiply those encodings. You can also bin numeric features and treat them like this.
+
+Numeric features can be multiplied, but also (less commonly) summed, subtracted, divided.
+
+Feature interactions explode the feature space and can lead to overfitting. You can minimize this with feature selection or dimensionality reduction.
+
+- feature selection example: fit a random forest on all interactions, then keep only the most important ones by feature importance
+
+Interactions are very effective for tree-based methods.
+
+Higher order interactions (those between 3 features or more) immensely explode the feature space and are usually done manually 
+("art more than science"). An automatic way of doing something close to this is to use decision trees. You take the index of tree leaf as a category ("this row is in the 25th leaf"). Kaggle people say that with Random Forest you can use *all* of the trees, but that feels like too much. Maybe better to train a simple decision tree and use those indices?
 
 ## time-based features
 
@@ -116,6 +174,30 @@ Useful for non tree-based models
 - number of apartments within 500m
 
 **Use Lat and Lon directly.** A decision tree can find splits within those, but you might have to rotate the coordinate system. Not sure how you pick the angle... treat it as a hyperparameter?
+
+## features based on statistics and distance
+
+This I can only explain on examples.
+
+Statistics examples:
+
+- aggregations for the city a user comes from: number of users visiting from this city, median basket size for the user from that city, etc
+- page visits and ads: max and min price of an ad for the page visited by users, SD of prices, most visited page
+
+Distance / neighbors: use when we do not have explicit grouping. Most natural example is physical location (described elsewhere), but you can create your own distance space. For example, users similar to their purchase history. Examples:
+
+- mean target of 10 / 20 / N closest neighbors
+- mean distance to 10 closest neighbors, or neighbors with target 1 or 0
+
+## matrix factorization techniques
+
+Techniques such as: SVD, PCA, truncated SVD (for sparse matrices), non-negative matrix factorization (NMF) good for count data and for tree-based models
+
+Be careful to use the same transformation on the test as you used on train
+
+I do not have a good source for this, will need to find it.
+
+t-SNE is a special such technique that does this in a non-linear fashion. Has a hyperparameter called perplexity which influences the results by a lot. Requires a lot of time to train, therefore dimensionality reduction is often done before.
 
 ## extracting features from text
 
