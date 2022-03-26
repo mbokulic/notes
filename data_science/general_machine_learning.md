@@ -39,7 +39,7 @@ True error, or generalization error is the error on the population. It is the er
 
 > True error is a theoretical idea, in practice you can only approximate it
 
-The relation btw the true error and complexity of the model (trained on training data) depends on the underlying true model. Typically, though, there is a "sweet spot" of complexity for a given problem, and for a given training 3sample size.
+The relation btw the true error and complexity of the model (trained on training data) depends on the underlying true model. Typically, though, there is a "sweet spot" of complexity for a given problem, and for a given training sample size.
 
 ### test error
 Test error involves holding out some data and testing the model on it. It is a proxy for "everything else", an approximation of the true error.
@@ -160,13 +160,13 @@ $$
 
 **Cohen's (weighted) Kappa** compares the accuracy of the predictions with a baseline accuracy, similar to what R-squared does for MSE. It is zero if the predictions are the same as the baseline, and 1 if all predictions are correct. The baseline is the prediction of randomly permuted predictions (there is an analytical solution for this, no need to really permute).
 $$
-kappa = 1 = \frac{error}{baselineError}
+kappa = 1 - \frac{error}{baselineError}
 $$
 Weighted Kappa assumes some errors are more costly than others. The most common use case is when the classes are rank-ordered, for example: healthy, mild disease, severe disease. Weights can be manual or preset, eg linear or quadratic. An example of quadratic weights is below.
 
 |         | healthy | mild | severe |
 | ------- | ------- | ---- | ------ |
-| healthy | 0       | 1    | 0      |
+| healthy | 0       | 1    | 4      |
 | mild    | 1       | 0    | 1      |
 | severe  | 4       | 1    | 0      |
 
@@ -182,7 +182,7 @@ Some metrics can be optimized directly (MSE, LogLoss) but many cannot.
   - if your library doesn't support sample weights, you can manually resample using those same weights, with replacement. Though likely you will have to resample and retrain several times and average the predictions to make them more stable
   - RMSLE involves transforming the target, fitting a model using MSE, then transforming back
 - accuracy: tune the threshold after optimizing another metric like Hinge loss (looks close enough to accuracy) or logloss
-- AUC: sometimes you can optimize it directly (it uses pairwise losses instead of pointwise as other metrics), but otherwise optimizelogloss
+- AUC: sometimes you can optimize it directly (it uses pairwise losses instead of pointwise as other metrics), but otherwise optimize logloss
 - Kappa:
   - (easy) optimize MSE and find the right thresholds
   - (hard) custom loss for GBM and neural nets
@@ -203,7 +203,7 @@ How to calibrate: Platt Scaling (fit a logistic regression to your predictions),
 
 Common approaches for validation
 
-- holodout set: split the training set into two parts, typically 80/20%
+- holdout set: split the training set into two parts, typically 80/20%
 - leave-p-out: you divide the training set into not p (training) and p (test). You test every permutation of this. Becomes computationally intractable for large N. Leave-one-out is simpler and easier to compute, and k-folds is an approximation to leave-p-out
 - k-folds means splitting the dataset randomly into k sets, and use each set as the test set with the rest as the training set. An issue for me is how to decide how many folds. Jeff Leek says smaller k = less variance, more bias, larger k = more variance, less bias. K-fold is more useful if you have a small dataset.
 - leave-one-out is k-folds where $k = N$. Ie, you use only one datapoint to test the model you trained on the others. Computationally intensive. UWA machine learning course suggests that the "best approximation to the generalization error of the model" is when you use leave-one-out (I guess because the training set size here is closest to the actual size).

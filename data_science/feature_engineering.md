@@ -35,6 +35,7 @@ Categories need to be turned into numbers for most algorithms to be able to inge
     * they will make the column randomization hyperparameter (*colsample_bytree*) work weirdly. The categorical column will always be present (because it is split into so many individual columns), while the non-categorical columns will almost never appear together.
  * It may lead to out of memory errors in case it creates too many columns. The solution is sparse matrices, where available. They store only non-zero values.
  * not an issue for H2o since it doesn’t one hot encode
+ * (but there is no solution) I guess the solution is to pick only the top N categories
 
 **Label encoding.** Turn category values into numbers of a single column. In most cases it doesn't work, since numbers imply an ordering. But it can work with ordinal values (eg, economy / business class in a plane, max education level, etc) or other variables where being close in number implies being close on the target. With linear and NNs it probably won't work.
 
@@ -49,7 +50,7 @@ other options
  * Label encoding where you choose an arbitrary number for each category. Usually useless.
  * Vector representation a.k.a. word2vec where you find a low dimensional subspace that fits your data. Require some fine-tuning and don’t always work out of the box
  * Optimal binning where you rely on tree-learners such as LightGBM or CatBoost. “Relying on LightGBM/CatBoost is the best out-of-the-box method”
- - ordinal encoding by frequency of categories (not sure, is it the same as label encoding)
+ - ordinal encoding by frequency of categories
 
 sources:
  * https://roamanalytics.com/2016/10/28/are-categorical-variables-getting-lost-in-your-random-forests/
@@ -81,7 +82,7 @@ Use prior knowledge / critical thinking and exploratory analysis to come up with
 
 **Categorical feature interactions.** Eg, economy class and gender. Useful for linear models which would otherwise ignore this.
 
-Random ideas
+Other
 
 - fractional part of price (eg, 2.99$ into 0.99) or another value. Eg, this can be useful to distinguish bots from humans sometimes (in a bidding humans will use round numbers, etc).
 
@@ -105,7 +106,7 @@ Fixing target leakage:
 
 - smoothing: combine category and global mean, inversely proportionate to the size of the category. Parameter $alpha$ controls the amount of regularization, with $alpha = 0$ meaning no regularization. In a way, $alpha$ is the "size of the category that we can trust". You have to use another method alongside this one, for example the CV loop method.
   $$
-  meanEncoding = \frac{mean(target) * nrows + globalMean * alpha}{nrows * alpha}
+  meanEncoding = \frac{mean(target) * nrows + globalMean * alpha}{nrows + alpha}
   $$
 
 - adding noise: you degrade the quality of mean encodings. An unstable method, not clear how much noise to add (another hyperparameter you need to tune). Usually used with leave-one-out
@@ -212,7 +213,7 @@ t-SNE is a special such technique that does this in a non-linear fashion. Has a 
 
 - term frequency: divide the number of occurrences with the total number of words per text (per row)
 - inverse document frequency: divide sample size with how many texts the word appears in, then take the log of it. Words that appear less often will have a higher score
-  $log(\frac{N}{frequency})$
+  $log(\frac{N}{appearances})$
 - These two approaches are usually combined into one. Then it's called TFiDF
 - There are other approaches similar to TFiDF
 
@@ -241,6 +242,8 @@ You may have values in the test set (and the production set) which you did not s
 Another issue (that I've seen no one talk about) is when the outcome range differs from train and test set. Tree-based models (which are commonly used) in particular can suffer from this since they do not extrapolate.
 
 ## feature drift
+
+https://towardsdatascience.com/drift-in-machine-learning-e49df46803a
 
 
 
